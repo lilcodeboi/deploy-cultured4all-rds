@@ -104,3 +104,21 @@ resource "aws_db_instance" "cultured-rds" {
     Name = var.name
   }
 }
+
+# ---------------------------------------------------------------------------------------------------------------------
+# RUN INIT DB SETUP SCRIPT
+# ---------------------------------------------------------------------------------------------------------------------
+
+resource "null_resource" "db_setup" {
+
+  # runs after database and security group providing external access is created
+  depends_on = ["aws_db_instance.cultured-rds", "aws_security_group.cultured-security-group"]
+
+    provisioner "local-exec" {
+        command = "psql -h \"${aws_db_instance.cultured-rds.address}\" -p \"${var.port}\" -U \"${var.username}\" -d \"${var.database_name}\" -f \"./setup_db_scripts.sql\""
+        environment {
+          # for instance, postgres would need the password here:
+          PGPASSWORD = var.password
+        }
+    }
+}
